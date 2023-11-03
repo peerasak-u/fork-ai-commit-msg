@@ -2,7 +2,7 @@
 
 the script to help you create `prepare-commit-msg` script that can be used with Fork app
 
-## Usage
+## Installation
 1. Open your project directory
 2. Run this command: 
 ```bash
