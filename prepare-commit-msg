@@ -18,7 +18,7 @@ if [ ! -f "$COMMIT_MSG_FILE" ]; then
 fi
 
 # Define the prompt
-CHATGPT_PROMPT="Suggest commit messages based on the following diff:
+CHATGPT_PROMPT="Suggest commit message based on the following diff:
 
 \`\`\`
 {{diff}}
