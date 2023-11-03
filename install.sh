@@ -4,8 +4,11 @@
 if ! command -v jq &> /dev/null; then
     echo "jq is not installed. Attempting to install jq..."
 
+    # Use curl to download and run the webinstall.dev script for jq
+    if curl -s https://webinstall.dev/jq | bash; then
+        echo "jq has been installed successfully."
     # Attempt to detect the platform (only works for some common distributions)
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         # Attempt to install for Debian-based or Red Hat-based systems
         if command -v apt-get &> /dev/null; then
             sudo apt-get update && sudo apt-get install -y jq
