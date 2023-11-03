@@ -14,6 +14,21 @@ else
     git config --global openai.apikey "$openai_api_key"
 fi
 
+# Check if we're inside a git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "Error: this script must be run from within a git repository."
+    exit 1
+fi
+
+# Define the path to the git hooks folder
+HOOKS_DIR="$(git rev-parse --git-dir)/hooks"
+
+# Check if the hooks directory exists, create if not
+if [ ! -d "$HOOKS_DIR" ]; then
+    echo "The hooks directory was not found, creating..."
+    mkdir -p "$HOOKS_DIR"
+fi
+
 # Define the URL of the raw gist containing the prepare-commit-msg hook
 GIST_URL="https://raw.githubusercontent.com/peerasak-u/fork-ai-commit-msg/main/prepare-commit-msg"
 
