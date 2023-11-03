@@ -6,10 +6,9 @@ COMMIT_MSG_FILE="${1:-$DEFAULT_COMMIT_MSG_FILE}"
 
 # Check if a commit message file is provided and if it has content
 if [ -f "$COMMIT_MSG_FILE" ]; then
-  # Read the first line of the commit message
-  FIRST_LINE=$(head -n 1 "$COMMIT_MSG_FILE")
-  # Check if the first line is a comment or empty
-  if [[ ! $FIRST_LINE =~ ^# ]] && [ -n "$FIRST_LINE" ]; then
+  # Check if there's any non-commented, non-empty line in the commit message file
+  if grep -q '^[^#]' "$COMMIT_MSG_FILE"; then
+    # Non-comment, non-empty line found, which means a commit message is already present
     echo "A commit message is already provided."
     exit 0
   fi

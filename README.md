@@ -25,6 +25,10 @@ A tool that auto-generates commit messages using AI. This script integrates a `p
 bash -c "$(curl -L https://raw.githubusercontent.com/peerasak-u/fork-ai-commit-msg/main/install.sh)"
 ```
 
+## 🚀 Usage
+1. Go to "Local Change" menu in Fork
+2. Click on "Run prepare-commit-msg hook"
+
 ## 🎯 Todo
 - [ ] Add Configuration for custom prompt
 - [ ] Add Configuration for OpenAI chat model
