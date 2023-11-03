@@ -1,5 +1,42 @@
 #!/bin/bash
 
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    echo "jq is not installed. Attempting to install jq..."
+
+    # Attempt to detect the platform (only works for some common distributions)
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Attempt to install for Debian-based or Red Hat-based systems
+        if command -v apt-get &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y jq
+        elif command -v dnf &> /dev/null; then
+            sudo dnf install -y jq
+        elif command -v yum &> /dev/null; then
+            sudo yum install -y jq
+        else
+            echo "Package manager not recognized. Please install jq manually."
+            exit 1
+        fi
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        # Attempt to install for macOS
+        if command -v brew &> /dev/null; then
+            brew install jq
+        else
+            echo "Homebrew not found. Please install jq manually or install Homebrew."
+            exit 1
+        fi
+    else
+        echo "Operating system not recognized. Please install jq manually."
+        exit 1
+    fi
+fi
+
+# Check if jq was successfully installed
+if ! command -v jq &> /dev/null; then
+    echo "Failed to install jq. Please install it manually."
+    exit 1
+fi
+
 # Check if the OpenAI API key is already set in the git configuration
 existing_key=$(git config --global --get openai.apikey)
 
