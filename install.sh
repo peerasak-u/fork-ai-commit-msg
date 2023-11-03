@@ -7,6 +7,25 @@ if ! command -v jq &> /dev/null; then
     # Use curl to download and run the webinstall.dev script for jq
     if curl -s https://webinstall.dev/jq | bash; then
         echo "jq has been installed successfully."
+
+        # Add the installed jq to the current PATH, if it's not already there
+        if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+            export PATH="$HOME/.local/bin:$PATH"
+            echo "Added jq to PATH for this session."
+        fi
+
+        # Reload the shell's environment if possible to recognize jq immediately
+        if [ -f "$HOME/.profile" ]; then
+            source "$HOME/.profile"
+        elif [ -f "$HOME/.bashrc" ]; then
+            source "$HOME/.bashrc"
+        elif [ -f "$HOME/.bash_profile" ]; then
+            source "$HOME/.bash_profile"
+        elif [ -f "$HOME/.zshrc" ]; then
+            source "$HOME/.zshrc"
+        elif [ -f "$HOME/.zprofile" ]; then
+            source "$HOME/.zprofile"
+        fi
     # Attempt to detect the platform (only works for some common distributions)
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         # Attempt to install for Debian-based or Red Hat-based systems
