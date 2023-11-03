@@ -13,9 +13,9 @@ A tool that auto-generates commit messages using AI. This script integrates a `p
 
 ## 📄 Requirements
 
-- Fork application for Git
+- [Fork](https://git-fork.com) application for Git
 - `curl` should be installed on your system
-- An active OpenAI API key
+- An active [OpenAI API key](https://platform.openai.com/account/api-keys)
 
 ## 📦 Installation
 
