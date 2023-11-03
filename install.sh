@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Check if jq is installed
 if ! command -v jq &> /dev/null; then
