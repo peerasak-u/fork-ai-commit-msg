@@ -22,5 +22,5 @@ A tool that auto-generates commit messages using AI. This script integrates a `p
 1. Navigate to your project's directory in your terminal.
 2. Run the installation script:
 ```bash
-   bash -c "$(curl -L https://raw.githubusercontent.com/peerasak-u/fork-ai-commit-msg/main/install.sh)"
+bash -c "$(curl -L https://raw.githubusercontent.com/peerasak-u/fork-ai-commit-msg/main/install.sh)"
 ```
