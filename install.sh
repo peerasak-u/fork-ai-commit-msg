@@ -15,7 +15,7 @@ else
 fi
 
 # Define the URL of the raw gist containing the prepare-commit-msg hook
-GIST_URL="https://gist.githubusercontent.com/peerasak-u/7768b4c1fb1dd9e55b96d45e7a7f7c7b/raw/f498b40cae1a3309da04e848d75cef61803bf8f0/prepare-commit-msg.sh"
+GIST_URL="https://raw.githubusercontent.com/peerasak-u/fork-ai-commit-msg/main/prepare-commit-msg"
 
 # Define the path to the git hooks folder
 HOOKS_DIR="$(git rev-parse --git-dir)/hooks"
