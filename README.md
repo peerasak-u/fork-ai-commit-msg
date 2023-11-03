@@ -1,5 +1,7 @@
 # Fork AI Commit Message
 
+![AI Commit Message Example](images/Screenshot.png)
+
 A tool that auto-generates commit messages using AI. This script integrates a `prepare-commit-msg` hook with OpenAI's language model to provide you with smart, context-aware commit suggestions.
 
 ## ✨ Features
