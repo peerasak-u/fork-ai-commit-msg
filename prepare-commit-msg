@@ -1,0 +1,99 @@
+#!/bin/bash
+
+# Define the default commit message file
+DEFAULT_COMMIT_MSG_FILE=".git/COMMIT_EDITMSG"
+COMMIT_MSG_FILE="${1:-$DEFAULT_COMMIT_MSG_FILE}"
+
+# Log the arguments and the environment to a file for debugging
+{
+  echo "Arguments: $@"
+  echo "Environment:"
+  env
+} >> /tmp/prepare-commit-msg.log
+
+# Check if a commit message file is provided or exists
+if [ ! -f "$COMMIT_MSG_FILE" ]; then
+  echo "Error: Commit message file does not exist or was not provided." >> /tmp/prepare-commit-msg.log
+  exit 1
+fi
+
+# Define the prompt
+CHATGPT_PROMPT="Suggest commit messages based on the following diff:
+
+\`\`\`
+{{diff}}
+\`\`\`
+
+commit messages must be following these rules:
+ - follow conventional commits
+ - message format must be in this format: \"<TYPE>: <DESCRIPTION>\"
+ - <TYPE> must be the prefix of commit message and must be one of the following: feat, fix, docs, style, refactor, test, chore
+ - <DESCRIPTION> must be the description of the commit in lowercase and without any special characters
+
+EXAMPLES COMMIT MESSAGE:
+ - fix: add password regex pattern
+ - feat: add new test cases
+
+NOTE: Response only commit message, no explanation anymore
+
+ACTUAL COMMIT MESSAGE: 
+"
+
+# Collect the git diff
+DIFF=$(git diff --cached)
+
+# Replace placeholder with actual diff in the prompt
+COMMIT_PROMPT=${CHATGPT_PROMPT/\{\{diff\}\}/"$DIFF"}
+
+# Use jq to construct the JSON payload
+DATA=$(jq -n --arg prompt "$COMMIT_PROMPT" \
+'{
+  "model": "gpt-3.5-turbo",
+  "messages": [
+    {
+      "role": "user",
+      "content": $prompt
+    }
+  ],
+  "temperature": 0.5,
+  "max_tokens": 150
+}')
+
+# Make sure jq successfully created the payload
+if [ -z "$DATA" ]; then
+  echo "Failed to construct JSON payload with jq" >> /tmp/prepare-commit-msg.log
+  exit 1
+fi
+
+# Get the OpenAI API key from the git configuration
+API_KEY=$(git config --get openai.apikey)
+
+if [ -z "$API_KEY" ]; then
+    echo "Error: OpenAI API key is not set in the git configuration." >> /tmp/prepare-commit-msg.log
+    exit 1
+fi
+
+# Make the API request
+API_URL="https://api.openai.com/v1/chat/completions"
+RESPONSE=$(curl -s -X POST "$API_URL" \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer $API_KEY" \
+--data "$DATA")
+
+# Check if the response was successful
+if [ -z "$RESPONSE" ]; then
+  echo "Error: No response from the API." >> /tmp/prepare-commit-msg.log
+  exit 1
+fi
+
+# Parse the response to get the commit message
+COMMIT_MSG=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+
+# Check if the commit message is empty or not
+if [ -z "$COMMIT_MSG" ]; then
+  echo "Error: Failed to generate a commit message." >> /tmp/prepare-commit-msg.log
+  exit 1
+fi
+
+# Output the commit message
+echo "$COMMIT_MSG"
