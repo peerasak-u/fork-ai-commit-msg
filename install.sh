@@ -89,7 +89,7 @@ else
 fi
 
 # Set default Git configuration values for CHATGPT_PROMPT, model, and max_tokens
-git config --global --add commit.template "$DEFAULT_CHATGPT_PROMPT"
+git config --global --add ai.prompt "$DEFAULT_CHATGPT_PROMPT"
 git config --global --add ai.model "$DEFAULT_MODEL"
 git config --global --add ai.maxtokens "$DEFAULT_MAX_TOKENS"
 

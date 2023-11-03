@@ -9,9 +9,9 @@ DEFAULT_CHATGPT_PROMPT="Suggest commit message based on the following diff:\n\n\
 DEFAULT_MODEL="gpt-3.5-turbo"
 DEFAULT_MAX_TOKENS=150
 
-CHATGPT_PROMPT=$(git config --get commit.template) || DEFAULT_CHATGPT_PROMPT
-MODEL=$(git config --get ai.model) || DEFAULT_MODEL
-MAX_TOKENS=$(git config --get ai.maxtokens) || DEFAULT_MAX_TOKENS
+CHATGPT_PROMPT=$(git config --get ai.prompt) || echo "$DEFAULT_CHATGPT_PROMPT"
+MODEL=$(git config --get ai.model) || echo "$DEFAULT_MODEL"
+MAX_TOKENS=$(git config --get ai.maxtokens) || echo "$DEFAULT_MAX_TOKENS"
 
 # Log the arguments and the environment to a file for debugging
 {
