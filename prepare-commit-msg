@@ -4,16 +4,6 @@
 DEFAULT_COMMIT_MSG_FILE=".git/COMMIT_EDITMSG"
 COMMIT_MSG_FILE="${1:-$DEFAULT_COMMIT_MSG_FILE}"
 
-# Check if a commit message file is provided and if it has content
-if [ -f "$COMMIT_MSG_FILE" ]; then
-  # Check if there's any non-commented, non-empty line in the commit message file
-  if grep -q '^[^#]' "$COMMIT_MSG_FILE"; then
-    # Non-comment, non-empty line found, which means a commit message is already present
-    echo "A commit message is already provided."
-    exit 0
-  fi
-fi
-
 # Read or set default configuration values
 DEFAULT_CHATGPT_PROMPT="Suggest commit message based on the following diff:\n\n\`\`\`\n{{diff}}\n\`\`\`\n\ncommit messages must be following these rules:\n - follow conventional commits\n - message format must be in this format: \"<TYPE>: <DESCRIPTION>\"\n - <TYPE> must be the prefix of commit message and must be one of the following: feat, fix, docs, style, refactor, test, chore\n - <DESCRIPTION> must be the description of the commit in lowercase and without any special characters\n\nEXAMPLES COMMIT MESSAGE:\n - fix: add password regex pattern\n - feat: add new test cases\n\nNOTE: Response only commit message, no explanation anymore\n\nACTUAL COMMIT MESSAGE: \n"
 DEFAULT_MODEL="gpt-3.5-turbo"

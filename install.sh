@@ -88,11 +88,26 @@ else
     git config --global openai.apikey "$openai_api_key"
 fi
 
-# Set default Git configuration values for CHATGPT_PROMPT, model, and max_tokens
-git config --global --add ai.prompt "$DEFAULT_CHATGPT_PROMPT"
-git config --global --add ai.model "$DEFAULT_MODEL"
-git config --global --add ai.maxtokens "$DEFAULT_MAX_TOKENS"
+# Function to set or update git configuration
+set_git_config() {
+  key="$1"
+  value="$2"
+  default_value="$3"
+  current_value=$(git config --global --get "$key")
+  
+  if [ -z "$current_value" ]; then
+    # If the current value is not set, set it to the default value
+    git config --global "$key" "$default_value"
+  elif [ "$current_value" != "$value" ]; then
+    # If the current value is set but different, update it
+    git config --global "$key" "$value"
+  fi
+}
 
+# Set or update the Git configuration values
+set_git_config ai.prompt "$DEFAULT_CHATGPT_PROMPT" "$DEFAULT_CHATGPT_PROMPT"
+set_git_config ai.model "$DEFAULT_MODEL" "$DEFAULT_MODEL"
+set_git_config ai.maxtokens "$DEFAULT_MAX_TOKENS" "$DEFAULT_MAX_TOKENS"
 # Check if we're inside a git repository
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
     echo "Error: this script must be run from within a git repository."
