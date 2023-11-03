@@ -42,6 +42,16 @@ existing_key=$(git config --global --get openai.apikey)
 
 if [ -n "$existing_key" ]; then
     echo "You have already set the OpenAI API key."
+    echo "Do you want to use the existing key? [Y/n]"
+    read -r use_existing_key < /dev/tty
+
+    if [[ $use_existing_key =~ ^([nN][oO]|[nN])$ ]]; then
+        echo "Please enter your new OpenAI API key:"
+        read -r openai_api_key < /dev/tty
+        git config --global openai.apikey "$openai_api_key"
+    else
+        echo "Using the existing OpenAI API key."
+    fi
 else
     # Prompt the user for their OpenAI API key
     echo "Please enter your OpenAI API key:"
