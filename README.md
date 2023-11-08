@@ -28,8 +28,3 @@ bash -c "$(curl -L https://raw.githubusercontent.com/peerasak-u/fork-ai-commit-m
 ## 🚀 Usage
 1. Go to "Local Change" menu in Fork
 2. Click on "Run prepare-commit-msg hook"
-
-## 🎯 Todo
-- [x] Add Configuration for custom prompt
-- [x] Add Configuration for OpenAI chat model
-- [x] Add Configuration for OpenAI max tokens
