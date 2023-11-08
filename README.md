@@ -30,6 +30,6 @@ bash -c "$(curl -L https://raw.githubusercontent.com/peerasak-u/fork-ai-commit-m
 2. Click on "Run prepare-commit-msg hook"
 
 ## 🎯 Todo
-- [ ] Add Configuration for custom prompt
-- [ ] Add Configuration for OpenAI chat model
-- [ ] Add Configuration for OpenAI max tokens
+- [x] Add Configuration for custom prompt
+- [x] Add Configuration for OpenAI chat model
+- [x] Add Configuration for OpenAI max tokens
