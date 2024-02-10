@@ -2,8 +2,8 @@
 
 # Set default configuration values
 DEFAULT_CHATGPT_PROMPT="Suggest commit message based on the following diff:\n\n\`\`\`\n{{diff}}\n\`\`\`\n\ncommit messages must be following these rules:\n - follow conventional commits\n - message format must be in this format: \"<TYPE>: <DESCRIPTION>\"\n - <TYPE> must be the prefix of commit message and must be one of the following: feat, fix, docs, style, refactor, test, chore\n - <DESCRIPTION> must be the description of the commit in lowercase and without any special characters\n\nEXAMPLES COMMIT MESSAGE:\n - fix: add password regex pattern\n - feat: add new test cases\n\nNOTE: Response only commit message, no explanation anymore\n\nACTUAL COMMIT MESSAGE: \n"
-DEFAULT_MODEL="gpt-3.5-turbo"
-DEFAULT_MAX_TOKENS=150
+DEFAULT_MODEL="mistralai/Mixtral-8x7B-Instruct-v0.1"
+DEFAULT_MAX_TOKENS=24000
 
 # Check if jq is installed
 if ! command -v jq &> /dev/null; then
