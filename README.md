@@ -2,7 +2,7 @@
 
 ![AI Commit Message Example](images/Screenshot.png)
 
-A tool that auto-generates commit messages using AI. This script integrates a `prepare-commit-msg` hook with OpenAI's language model to provide you with smart, context-aware commit suggestions.
+A tool that auto-generates commit messages using AI. This script integrates a `prepare-commit-msg` hook with Mistral's language model to provide you with smart, context-aware commit suggestions.
 
 ## ✨ Features
 
@@ -21,10 +21,12 @@ A tool that auto-generates commit messages using AI. This script integrates a `p
 
 1. Navigate to your project's directory in your terminal.
 2. Run the installation script:
+
 ```bash
 bash -c "$(curl -L https://raw.githubusercontent.com/peerasak-u/fork-ai-commit-msg/main/install.sh)"
 ```
 
 ## 🚀 Usage
+
 1. Go to "Local Change" menu in Fork
 2. Click on "Run prepare-commit-msg hook"

@@ -61,7 +61,7 @@ if [ -z "$API_KEY" ]; then
 fi
 
 # Make the API request
-API_URL="https://api.openai.com/v1/chat/completions"
+API_URL="https://api.together.xyz/v1/chat/completions"
 RESPONSE=$(curl -s -X POST "$API_URL" \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $API_KEY" \
