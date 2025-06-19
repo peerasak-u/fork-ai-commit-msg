@@ -4,33 +4,95 @@
 DEFAULT_COMMIT_MSG_FILE=".git/COMMIT_EDITMSG"
 COMMIT_MSG_FILE="${1:-$DEFAULT_COMMIT_MSG_FILE}"
 
+# Logging function with timestamps
+log_message() {
+    local level="$1"
+    local message="$2"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> /tmp/prepare-commit-msg.log
+}
+
+# Function to generate fallback commit message based on file changes
+generate_fallback_message() {
+    local diff="$1"
+    
+    # Analyze the diff to determine commit type
+    if echo "$diff" | grep -q "^+.*test\|spec"; then
+        echo "test: add or update tests"
+    elif echo "$diff" | grep -q "^+.*\.md\|README\|doc"; then
+        echo "docs: update documentation"
+    elif echo "$diff" | grep -qE "^\+.*fix|bug|error"; then
+        echo "fix: resolve issue"
+    elif echo "$diff" | grep -q "^+"; then
+        echo "feat: add new changes"
+    else
+        echo "chore: update files"
+    fi
+}
+
 # Read or set default configuration values
 DEFAULT_CHATGPT_PROMPT="Suggest commit message based on the following diff:\n\n\`\`\`\n{{diff}}\n\`\`\`\n\ncommit messages must be following these rules:\n - follow conventional commits\n - message format must be in this format: \"<TYPE>: <DESCRIPTION>\"\n - <TYPE> must be the prefix of commit message and must be one of the following: feat, fix, docs, style, refactor, test, chore\n - <DESCRIPTION> must be the description of the commit in lowercase and without any special characters\n\nEXAMPLES COMMIT MESSAGE:\n - fix: add password regex pattern\n - feat: add new test cases\n\nNOTE: Response only commit message, no explanation anymore\n\nACTUAL COMMIT MESSAGE: \n"
 DEFAULT_MODEL="gpt-4o-mini"
 DEFAULT_MAX_TOKENS=128000
+DEFAULT_API_ENDPOINT="https://api.openai.com/v1/chat/completions"
 
-CHATGPT_PROMPT=$(git config --get ai.prompt) || echo "$DEFAULT_CHATGPT_PROMPT"
-MODEL=$(git config --get ai.model) || echo "$DEFAULT_MODEL"
-MAX_TOKENS=$(git config --get ai.maxtokens) || echo "$DEFAULT_MAX_TOKENS"
+# Get configuration values with validation
+CHATGPT_PROMPT=$(git config --get ai.prompt)
+if [ -z "$CHATGPT_PROMPT" ]; then
+    CHATGPT_PROMPT="$DEFAULT_CHATGPT_PROMPT"
+    log_message "INFO" "Using default AI prompt"
+fi
 
-# Log the arguments and the environment to a file for debugging
-{
-  echo "Arguments: $@"
-  echo "Environment:"
-  env
-} >> /tmp/prepare-commit-msg.log
+MODEL=$(git config --get ai.model)
+if [ -z "$MODEL" ]; then
+    MODEL="$DEFAULT_MODEL"
+    log_message "INFO" "Using default model: $MODEL"
+fi
+
+MAX_TOKENS=$(git config --get ai.maxtokens)
+if [ -z "$MAX_TOKENS" ]; then
+    MAX_TOKENS="$DEFAULT_MAX_TOKENS"
+    log_message "INFO" "Using default max tokens: $MAX_TOKENS"
+elif ! [[ "$MAX_TOKENS" =~ ^[0-9]+$ ]] || [ "$MAX_TOKENS" -lt 1 ] || [ "$MAX_TOKENS" -gt 200000 ]; then
+    log_message "WARN" "Invalid max tokens value: $MAX_TOKENS. Using default: $DEFAULT_MAX_TOKENS"
+    MAX_TOKENS="$DEFAULT_MAX_TOKENS"
+fi
+
+API_ENDPOINT=$(git config --get ai.endpoint)
+if [ -z "$API_ENDPOINT" ]; then
+    API_ENDPOINT="$DEFAULT_API_ENDPOINT"
+    log_message "INFO" "Using default API endpoint"
+elif ! [[ "$API_ENDPOINT" =~ ^https?:// ]]; then
+    log_message "ERROR" "Invalid API endpoint format: $API_ENDPOINT. Must start with http:// or https://"
+    echo "chore: update files (API endpoint configuration error)"
+    exit 0
+fi
+
+# Initialize logging
+log_message "INFO" "Starting prepare-commit-msg hook with arguments: $@"
 
 # Check if a commit message file is provided or exists
 if [ ! -f "$COMMIT_MSG_FILE" ]; then
-  echo "Error: Commit message file does not exist or was not provided." >> /tmp/prepare-commit-msg.log
-  exit 1
+  log_message "ERROR" "Commit message file does not exist or was not provided: $COMMIT_MSG_FILE"
+  echo "chore: update files (commit message file error)"
+  exit 0
 fi
 
 # Collect the git diff
 DIFF=$(git diff --cached)
 
+# Validate that there are staged changes
+if [ -z "$DIFF" ]; then
+    log_message "WARN" "No staged changes found in git diff --cached"
+    echo "chore: update files (no staged changes)"
+    exit 0
+fi
+
+log_message "INFO" "Found staged changes, diff length: ${#DIFF} characters"
+
 # Replace placeholder with actual diff in the prompt
 COMMIT_PROMPT=${CHATGPT_PROMPT/\{\{diff\}\}/"$DIFF"}
+
+log_message "DEBUG" "Generated prompt: $COMMIT_PROMPT"
 
 # Use jq to construct the JSON payload
 DATA=$(jq -n --arg prompt "$COMMIT_PROMPT" --arg model "$MODEL" --argjson max_tokens "$MAX_TOKENS" \
@@ -48,39 +110,94 @@ DATA=$(jq -n --arg prompt "$COMMIT_PROMPT" --arg model "$MODEL" --argjson max_to
 
 # Make sure jq successfully created the payload
 if [ -z "$DATA" ]; then
-  echo "Failed to construct JSON payload with jq" >> /tmp/prepare-commit-msg.log
-  exit 1
+  log_message "ERROR" "Failed to construct JSON payload with jq"
+  FALLBACK_MSG=$(generate_fallback_message "$DIFF")
+  echo "$FALLBACK_MSG"
+  exit 0
 fi
+
+log_message "INFO" "JSON payload constructed successfully"
 
 # Get the OpenAI API key from the git configuration
 API_KEY=$(git config --get openai.apikey)
 
 if [ -z "$API_KEY" ]; then
-    echo "Error: OpenAI API key is not set in the git configuration." >> /tmp/prepare-commit-msg.log
-    exit 1
+    log_message "ERROR" "OpenAI API key is not set in git configuration"
+    FALLBACK_MSG=$(generate_fallback_message "$DIFF")
+    echo "$FALLBACK_MSG"
+    exit 0
+elif [ ${#API_KEY} -lt 20 ]; then
+    log_message "ERROR" "OpenAI API key appears to be invalid (too short)"
+    FALLBACK_MSG=$(generate_fallback_message "$DIFF")
+    echo "$FALLBACK_MSG"
+    exit 0
 fi
 
+log_message "INFO" "API key validated successfully"
+
 # Make the API request
-API_URL="https://api.together.xyz/v1/chat/completions"
+API_URL="$API_ENDPOINT"
+log_message "INFO" "Making API request to: $API_URL"
+
 RESPONSE=$(curl -s -X POST "$API_URL" \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer $API_KEY" \
---data "$DATA")
+--data "$DATA" \
+--max-time 30 \
+--write-out "HTTPSTATUS:%{http_code}")
+
+# Extract HTTP status code and response body
+HTTP_STATUS=$(echo "$RESPONSE" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
+RESPONSE_BODY=$(echo "$RESPONSE" | sed 's/HTTPSTATUS:[0-9]*$//')
+
+log_message "INFO" "API response HTTP status: $HTTP_STATUS"
 
 # Check if the response was successful
-if [ -z "$RESPONSE" ]; then
-  echo "Error: No response from the API." >> /tmp/prepare-commit-msg.log
-  exit 1
+if [ -z "$RESPONSE_BODY" ]; then
+  log_message "ERROR" "No response from the API"
+  FALLBACK_MSG=$(generate_fallback_message "$DIFF")
+  echo "$FALLBACK_MSG"
+  exit 0
+fi
+
+# Check HTTP status
+if [ "$HTTP_STATUS" != "200" ]; then
+  log_message "ERROR" "API request failed with HTTP status $HTTP_STATUS"
+  # Try to extract error message from response
+  API_ERROR=$(echo "$RESPONSE_BODY" | jq -r '.error.message // .error // "Unknown API error"' 2>/dev/null || echo "Unknown API error")
+  log_message "ERROR" "API error: $API_ERROR"
+  FALLBACK_MSG=$(generate_fallback_message "$DIFF")
+  echo "$FALLBACK_MSG"
+  exit 0
+fi
+
+# Validate JSON response structure
+if ! echo "$RESPONSE_BODY" | jq -e '.choices[0].message.content' > /dev/null 2>&1; then
+  log_message "ERROR" "Invalid API response structure"
+  log_message "DEBUG" "Response body: $RESPONSE_BODY"
+  FALLBACK_MSG=$(generate_fallback_message "$DIFF")
+  echo "$FALLBACK_MSG"
+  exit 0
 fi
 
 # Parse the response to get the commit message
-COMMIT_MSG=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+COMMIT_MSG=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content')
 
-# Check if the commit message is empty or not
-if [ -z "$COMMIT_MSG" ]; then
-  echo "Error: Failed to generate a commit message." >> /tmp/prepare-commit-msg.log
-  exit 1
+# Check if the commit message is valid
+if [ -z "$COMMIT_MSG" ] || [ "$COMMIT_MSG" = "null" ]; then
+  log_message "ERROR" "AI generated null or empty commit message"
+  FALLBACK_MSG=$(generate_fallback_message "$DIFF")
+  echo "$FALLBACK_MSG"
+  exit 0
 fi
+
+# Validate commit message format (basic check)
+if ! echo "$COMMIT_MSG" | grep -qE "^(feat|fix|docs|style|refactor|test|chore):\s*.+"; then
+  log_message "WARN" "AI generated message doesn't follow conventional commits format: $COMMIT_MSG"
+  # Still use it but log the warning
+fi
+
+log_message "INFO" "Successfully generated commit message: $COMMIT_MSG"
 
 # Output the commit message
 echo "$COMMIT_MSG"
